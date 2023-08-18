@@ -5,47 +5,52 @@ app.use(express.json())
 
 const users = []
 
+const userCheckId = (request, response, next) => {
+    const { id } = request.params
+    const index = users.findIndex(user => user.id === id)
+
+    if (index < 0) {
+        return response.status(404).json({ erro: "User Not Found" })
+    }
+
+    request.userId = id
+    request.userIndex = index
+
+    next()
+
+}
+
 app.get('/users', (request, response) => {   // Recebendo os Usuários
     return response.json(users)
 })
 
 app.post('/users', (request, response) => {  // Criação dos Usuários
-    const {name, age} = request.body
+    const { name, age } = request.body
 
-    const user = {id: uuid.v4(), name, age }
+    const user = { id: uuid.v4(), name, age }
 
     users.push(user)
 
     return response.status(201).json(users)
 })
 
-app.put('/users/:id', (request, response) => {  // Atualiza os dados dos Usuários
-    const {id} = request.params
-    const {name, age} = request.body
+app.put('/users/:id', userCheckId, (request, response) => {  // Atualiza os dados dos Usuários
 
-    const updateUser = {id, name, age}
+    const { name, age } = request.body
+    const id = request.userId
+    const index = request.userIndex
 
-    const index = users.findIndex(user => user.id === id)
-
-    if(index < 0){
-        return response.status(404).json({message: "User Not Found"})
-    }
+    const updateUser = { id, name, age }
 
     users[index] = updateUser
 
     return response.status(201).json(updateUser)
 })
 
-app.delete('/users/:id', (request, response) => {  // Deleta todo o usuário
-    const {id} = request.params
+app.delete('/users/:id', userCheckId, (request, response) => {  // Deleta todo o usuário
+    const index = request.userIndex
 
-    const index = users.findIndex(user => user.id === id)
-
-    if(index < 0){
-        return response.status(404).json({message: "User Not Found"})
-    }
-
-    users.splice(index,1)
+    users.splice(index, 1)
 
     return response.status(201).json()
 })
